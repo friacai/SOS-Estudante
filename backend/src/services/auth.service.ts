@@ -1,8 +1,14 @@
 import { UserModel } from "../models/User.js";
-import { hashPassword } from "./password.service.js";
+import { hashPassword, comparePassword } from "./password.service.js";
+import { generateToken } from "./jwt.service.js";
 
 export interface RegisterUserData {
   name: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginUserData {
   email: string;
   password: string;
 }
@@ -34,6 +40,39 @@ export async function registerUser(data: RegisterUserData) {
   });
 
   return user;
+}
+
+export async function loginUser(data: LoginUserData) {
+  const email = data.email.trim().toLowerCase();
+
+  if (passwordIsInvalid(data.password)) {
+    throw new Error("E-mail ou senha inválidos.");
+  }
+
+  const user = await UserModel.findOne({ email });
+
+  if (!user || !user.isActive) {
+    throw new Error("E-mail ou senha inválidos.");
+  }
+
+  const passwordMatches = await comparePassword(
+    data.password,
+    user.passwordHash,
+  );
+
+  if (!passwordMatches) {
+    throw new Error("E-mail ou senha inválidos.");
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  const token = generateToken(user._id.toString());
+
+  return {
+    token,
+    user,
+  };
 }
 
 function passwordIsInvalid(password: string): boolean {
