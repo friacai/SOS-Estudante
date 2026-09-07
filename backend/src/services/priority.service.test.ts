@@ -125,3 +125,62 @@ describe("Priority Service", () => {
     });
   });
 });
+describe("calculatePriority - modos de prioridade", () => {
+  const now = new Date("2026-09-06T12:00:00.000Z");
+
+  it("deve priorizar o prazo no modo deadline", () => {
+    const result = calculatePriority(
+      {
+        dueDate: new Date("2026-09-07T12:00:00.000Z"),
+        difficulty: 1,
+        complexity: 1,
+        mode: "deadline",
+      },
+      now,
+    );
+
+    expect(result.priority).toBe("medium");
+  });
+
+  it("deve priorizar a dificuldade no modo difficulty", () => {
+    const result = calculatePriority(
+      {
+        dueDate: new Date("2026-09-20T12:00:00.000Z"),
+        difficulty: 5,
+        complexity: 1,
+        mode: "difficulty",
+      },
+      now,
+    );
+
+    expect(result.priority).toBe("high");
+  });
+
+  it("deve priorizar a complexidade no modo complexity", () => {
+    const result = calculatePriority(
+      {
+        dueDate: new Date("2026-09-20T12:00:00.000Z"),
+        difficulty: 1,
+        complexity: 5,
+        mode: "complexity",
+      },
+      now,
+    );
+
+    expect(result.priority).toBe("high");
+  });
+
+  it("deve combinar os fatores no modo balanced", () => {
+    const result = calculatePriority(
+      {
+        dueDate: new Date("2026-09-10T12:00:00.000Z"),
+        difficulty: 3,
+        complexity: 3,
+        mode: "balanced",
+      },
+      now,
+    );
+
+    expect(result.priority).toBe("medium");
+  });
+});

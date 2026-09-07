@@ -1,4 +1,6 @@
 import { TaskModel } from "../models/Task.js";
+import { calculatePriority } from "./priority.service.js";
+import { UserModel } from "../models/User.js";
 
 export interface CreateTaskData {
   userId: string;
@@ -9,7 +11,6 @@ export interface CreateTaskData {
   status?: "pending" | "in_progress" | "completed";
   difficulty?: number;
   complexity?: number;
-  priority?: "low" | "medium" | "high";
   dueDate?: Date | null;
 }
 
@@ -32,6 +33,25 @@ export async function createTask(data: CreateTaskData) {
     }
   }
 
+  const difficulty = data.difficulty ?? 3;
+  const complexity = data.complexity ?? 3;
+  const dueDate = data.dueDate ?? null;
+const user = await UserModel.findById(data.userId);
+
+if (!user) {
+  throw new Error("Usuário não encontrado.");
+}
+
+const priorityMode = user.preferences?.priorityMode ?? "balanced"
+;
+
+  const priorityResult = calculatePriority({
+    dueDate,
+    difficulty,
+    complexity,
+    mode: priorityMode,
+  });
+
   return TaskModel.create({
     userId: data.userId,
     title,
@@ -39,10 +59,10 @@ export async function createTask(data: CreateTaskData) {
     subjectId: data.subjectId ?? null,
     type: data.type ?? "task",
     status: data.status ?? "pending",
-    difficulty: data.difficulty ?? 3,
-    complexity: data.complexity ?? 3,
-    priority: data.priority ?? "medium",
-    dueDate: data.dueDate ?? null,
+    difficulty,
+    complexity,
+    priority: priorityResult.priority,
+    dueDate,
   });
 }
 
@@ -72,7 +92,6 @@ export interface UpdateTaskData {
   status?: "pending" | "in_progress" | "completed";
   difficulty?: number;
   complexity?: number;
-  priority?: "low" | "medium" | "high";
   dueDate?: Date | null;
 }
 
@@ -124,15 +143,42 @@ export async function updateTask(data: UpdateTaskData) {
     }
 
     updateData.complexity = data.complexity;
-  }
-
-  if (data.priority !== undefined) {
-    updateData.priority = data.priority;
+ 
   }
 
   if (data.dueDate !== undefined) {
     updateData.dueDate = data.dueDate;
   }
+
+  const currentTask = await TaskModel.findOne({
+  _id: data.taskId,
+  userId: data.userId,
+});
+
+if (!currentTask) {
+  throw new Error("Tarefa não encontrada.");
+}
+const user = await UserModel.findById(data.userId);
+
+if (!user) {
+  throw new Error("Usuário não encontrado.");
+}
+
+const priorityMode = user.preferences?.priorityMode ?? "balanced";
+const difficulty = data.difficulty ?? currentTask.difficulty;
+const complexity = data.complexity ?? currentTask.complexity;
+const dueDate =
+  data.dueDate !== undefined
+    ? data.dueDate
+    : (currentTask.dueDate ?? null);
+const priorityResult = calculatePriority({
+  dueDate,
+  difficulty,
+  complexity,
+  mode: priorityMode,
+});
+
+updateData.priority = priorityResult.priority;
 
   if (Object.keys(updateData).length === 0) {
     throw new Error("Nenhum campo para atualizar.");

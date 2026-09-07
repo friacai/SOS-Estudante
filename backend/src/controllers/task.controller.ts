@@ -28,7 +28,6 @@ export async function create(
       status,
       difficulty,
       complexity,
-      priority,
       dueDate,
     } = req.body;
 
@@ -41,7 +40,6 @@ export async function create(
       status,
       difficulty,
       complexity,
-      priority,
       dueDate: dueDate ? new Date(dueDate) : null,
     });
 
@@ -146,7 +144,6 @@ export async function update(
       status,
       difficulty,
       complexity,
-      priority,
       dueDate,
     } = req.body;
 
@@ -160,7 +157,6 @@ export async function update(
       status,
       difficulty,
       complexity,
-      priority,
       dueDate:
         dueDate === undefined
           ? undefined

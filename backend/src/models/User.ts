@@ -46,22 +46,13 @@ const userSchema = new Schema(
       default: "America/Sao_Paulo",
     },
 
-    preferences: {
-      prioritizeDeadline: {
-        type: Boolean,
-        default: true,
-      },
-
-      prioritizeDifficulty: {
-        type: Boolean,
-        default: false,
-      },
-
-      prioritizeComplexity: {
-        type: Boolean,
-        default: false,
-      },
-    },
+   preferences: {
+  priorityMode: {
+    type: String,
+    enum: ["deadline", "difficulty", "complexity", "balanced"],
+    default: "balanced",
+  },
+},
 
     isActive: {
       type: Boolean,
