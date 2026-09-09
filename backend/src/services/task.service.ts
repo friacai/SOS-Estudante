@@ -1,4 +1,5 @@
 import { TaskModel } from "../models/Task.js";
+import { SubjectModel } from "../models/Subject.js";
 import { calculatePriority } from "./priority.service.js";
 import { UserModel } from "../models/User.js";
 
@@ -36,14 +37,25 @@ export async function createTask(data: CreateTaskData) {
   const difficulty = data.difficulty ?? 3;
   const complexity = data.complexity ?? 3;
   const dueDate = data.dueDate ?? null;
-const user = await UserModel.findById(data.userId);
 
-if (!user) {
-  throw new Error("Usuário não encontrado.");
-}
+  const user = await UserModel.findById(data.userId);
 
-const priorityMode = user.preferences?.priorityMode ?? "balanced"
-;
+  if (!user) {
+    throw new Error("Usuário não encontrado.");
+  }
+
+  if (data.subjectId) {
+    const subject = await SubjectModel.findOne({
+      _id: data.subjectId,
+      userId: data.userId,
+    });
+
+    if (!subject) {
+      throw new Error("Matéria não encontrada.");
+    }
+  }
+
+  const priorityMode = user.preferences?.priorityMode ?? "balanced";
 
   const priorityResult = calculatePriority({
     dueDate,
@@ -82,6 +94,7 @@ export async function getTaskById(
     userId,
   });
 }
+
 export interface UpdateTaskData {
   userId: string;
   taskId: string;
@@ -115,6 +128,17 @@ export async function updateTask(data: UpdateTaskData) {
   }
 
   if (data.subjectId !== undefined) {
+    if (data.subjectId !== null) {
+      const subject = await SubjectModel.findOne({
+        _id: data.subjectId,
+        userId: data.userId,
+      });
+
+      if (!subject) {
+        throw new Error("Matéria não encontrada.");
+      }
+    }
+
     updateData.subjectId = data.subjectId;
   }
 
@@ -143,7 +167,6 @@ export async function updateTask(data: UpdateTaskData) {
     }
 
     updateData.complexity = data.complexity;
- 
   }
 
   if (data.dueDate !== undefined) {
@@ -151,34 +174,41 @@ export async function updateTask(data: UpdateTaskData) {
   }
 
   const currentTask = await TaskModel.findOne({
-  _id: data.taskId,
-  userId: data.userId,
-});
+    _id: data.taskId,
+    userId: data.userId,
+  });
 
-if (!currentTask) {
-  throw new Error("Tarefa não encontrada.");
-}
-const user = await UserModel.findById(data.userId);
+  if (!currentTask) {
+    throw new Error("Tarefa não encontrada.");
+  }
 
-if (!user) {
-  throw new Error("Usuário não encontrado.");
-}
+  const user = await UserModel.findById(data.userId);
 
-const priorityMode = user.preferences?.priorityMode ?? "balanced";
-const difficulty = data.difficulty ?? currentTask.difficulty;
-const complexity = data.complexity ?? currentTask.complexity;
-const dueDate =
-  data.dueDate !== undefined
-    ? data.dueDate
-    : (currentTask.dueDate ?? null);
-const priorityResult = calculatePriority({
-  dueDate,
-  difficulty,
-  complexity,
-  mode: priorityMode,
-});
+  if (!user) {
+    throw new Error("Usuário não encontrado.");
+  }
 
-updateData.priority = priorityResult.priority;
+  const priorityMode = user.preferences?.priorityMode ?? "balanced";
+
+  const difficulty =
+    data.difficulty ?? currentTask.difficulty;
+
+  const complexity =
+    data.complexity ?? currentTask.complexity;
+
+  const dueDate =
+    data.dueDate !== undefined
+      ? data.dueDate
+      : (currentTask.dueDate ?? null);
+
+  const priorityResult = calculatePriority({
+    dueDate,
+    difficulty,
+    complexity,
+    mode: priorityMode,
+  });
+
+  updateData.priority = priorityResult.priority;
 
   if (Object.keys(updateData).length === 0) {
     throw new Error("Nenhum campo para atualizar.");
@@ -204,6 +234,7 @@ updateData.priority = priorityResult.priority;
 
   return task;
 }
+
 export async function deleteTask(
   userId: string,
   taskId: string,
@@ -217,3 +248,4 @@ export async function deleteTask(
     throw new Error("Tarefa não encontrada.");
   }
 }
+
