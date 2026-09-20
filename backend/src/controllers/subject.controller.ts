@@ -20,8 +20,14 @@ export async function create(
       return;
     }
 
-    const { name, description, knowledgeLevel, difficulty, isCustom } =
-      req.body;
+    const {
+      name,
+      description,
+      knowledgeLevel,
+      difficulty,
+      complexity,
+      isCustom,
+    } = req.body;
 
     const subject = await createSubject({
       userId: req.userId,
@@ -29,6 +35,7 @@ export async function create(
       description,
       knowledgeLevel,
       difficulty,
+      complexity,
       isCustom,
     });
 

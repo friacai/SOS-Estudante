@@ -6,6 +6,7 @@ export interface CreateSubjectData {
   description?: string;
   knowledgeLevel?: "unknown" | "basic" | "medium" | "advanced";
   difficulty?: number;
+  complexity?: number;
   isCustom?: boolean;
 }
 
@@ -13,12 +14,20 @@ export async function createSubject(data: CreateSubjectData) {
   const name = data.name.trim();
 
   if (name.length < 2) {
-    throw new Error("O nome da matéria deve ter pelo menos 2 caracteres.");
+    throw new Error(
+      "O nome da matéria deve ter pelo menos 2 caracteres.",
+    );
   }
 
   if (data.difficulty !== undefined) {
     if (data.difficulty < 1 || data.difficulty > 5) {
       throw new Error("A dificuldade deve estar entre 1 e 5.");
+    }
+  }
+
+  if (data.complexity !== undefined) {
+    if (data.complexity < 1 || data.complexity > 5) {
+      throw new Error("A complexidade deve estar entre 1 e 5.");
     }
   }
 
@@ -37,12 +46,15 @@ export async function createSubject(data: CreateSubjectData) {
     description: data.description?.trim() ?? "",
     knowledgeLevel: data.knowledgeLevel ?? "unknown",
     difficulty: data.difficulty ?? 3,
+    complexity: data.complexity ?? 3,
     isCustom: data.isCustom ?? true,
   });
 }
 
 export async function listSubjects(userId: string) {
-  return SubjectModel.find({ userId }).sort({ name: 1 });
+  return SubjectModel.find({ userId }).sort({
+    name: 1,
+  });
 }
 
 export async function getSubjectById(
@@ -54,6 +66,7 @@ export async function getSubjectById(
     userId,
   });
 }
+
 export interface UpdateSubjectData {
   userId: string;
   subjectId: string;
@@ -79,7 +92,9 @@ export async function updateSubject(data: UpdateSubjectData) {
     const existingSubject = await SubjectModel.findOne({
       userId: data.userId,
       name,
-      _id: { $ne: data.subjectId },
+      _id: {
+        $ne: data.subjectId,
+      },
     });
 
     if (existingSubject) {
@@ -113,6 +128,10 @@ export async function updateSubject(data: UpdateSubjectData) {
     updateData.complexity = data.complexity;
   }
 
+  if (Object.keys(updateData).length === 0) {
+    throw new Error("Nenhum campo para atualizar.");
+  }
+
   const subject = await SubjectModel.findOneAndUpdate(
     {
       _id: data.subjectId,
@@ -133,6 +152,7 @@ export async function updateSubject(data: UpdateSubjectData) {
 
   return subject;
 }
+
 export async function deleteSubject(
   userId: string,
   subjectId: string,

@@ -45,7 +45,7 @@ const subjectSchema = new Schema(
 
     isCustom: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   {

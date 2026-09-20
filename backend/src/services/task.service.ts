@@ -64,17 +64,20 @@ export async function createTask(data: CreateTaskData) {
     mode: priorityMode,
   });
 
+  const status = data.status ?? "pending";
+
   return TaskModel.create({
     userId: data.userId,
     title,
     description: data.description?.trim() ?? "",
     subjectId: data.subjectId ?? null,
     type: data.type ?? "task",
-    status: data.status ?? "pending",
+    status,
     difficulty,
     complexity,
     priority: priorityResult.priority,
     dueDate,
+    completedAt: status === "completed" ? new Date() : null,
   });
 }
 
@@ -173,6 +176,10 @@ export async function updateTask(data: UpdateTaskData) {
     updateData.dueDate = data.dueDate;
   }
 
+  if (Object.keys(updateData).length === 0) {
+    throw new Error("Nenhum campo para atualizar.");
+  }
+
   const currentTask = await TaskModel.findOne({
     _id: data.taskId,
     userId: data.userId,
@@ -209,10 +216,6 @@ export async function updateTask(data: UpdateTaskData) {
   });
 
   updateData.priority = priorityResult.priority;
-
-  if (Object.keys(updateData).length === 0) {
-    throw new Error("Nenhum campo para atualizar.");
-  }
 
   const task = await TaskModel.findOneAndUpdate(
     {
